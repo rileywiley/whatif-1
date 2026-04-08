@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+*.egg
+
+# Environment
+.env
+
+# Data
+data/fastf1_cache/
+
+# IDE
+.idea/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# OS
+.DS_Store
+
+# Alembic
+*.pyc
+
+# uv
+uv.lock

@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+:root {
+  --bg-base: #0C0C0E;
+  --bg-card: #16161A;
+  --bg-surface: #1C1C20;
+  --bg-elevated: #222226;
+  --border-subtle: #2A2A2E;
+  --border-emphasis: #3A3A3E;
+  --border-strong: #5A5A5E;
+  --text-bright: #F0EEEA;
+  --text-primary: #E8E6E1;
+  --text-tertiary: #C0BEB8;
+  --text-secondary: #8A8A8E;
+  --text-muted: #5A5A5E;
+  --text-disabled: #3A3A3E;
+  --accent: #5DCAA5;
+  --accent-dim: #2D6B56;
+  --accent-bg: #143028;
+  --accent-text: #04342C;
+  --danger: #E24B4A;
+  --danger-bg: #2A1414;
+  --danger-border: #3D1414;
+  --warning: #EF9F27;
+  --warning-bg: #1E1A0E;
+  --warning-border: #3D2F0A;
+  --info: #3B8BD4;
+  --info-bg: #0C1A28;
+  --info-border: #0C2A4A;
+  --vsc: #9B8AEE;
+  --vsc-bg: #14121E;
+  --vsc-border: #2A2450;
+  --tyre-soft: #E24B4A;
+  --tyre-medium: #EF9F27;
+  --tyre-hard: #8A8A8E;
+  --tyre-inter: #5DCAA5;
+  --tyre-wet: #3B8BD4;
+  --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', Menlo, monospace;
+}
+
+body {
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-weight: 300;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+input, select, textarea, button {
+  font-family: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}

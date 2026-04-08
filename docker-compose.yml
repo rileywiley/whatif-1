@@ -1,0 +1,34 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: whatif1-postgres
+    environment:
+      POSTGRES_USER: whatif1
+      POSTGRES_PASSWORD: whatif1dev
+      POSTGRES_DB: whatif1
+    ports:
+      - "5432:5432"
+    volumes:
+      - whatif1_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U whatif1 -d whatif1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: whatif1-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - whatif1_redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  whatif1_pgdata:
+  whatif1_redis:
