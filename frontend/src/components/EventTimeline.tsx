@@ -1,17 +1,15 @@
 import type { RaceEvent } from '../types';
 
-const EVENT_COLORS: Record<string, { bg: string; color: string }> = {
-  SAFETY_CAR: { bg: 'var(--warning-bg)', color: 'var(--warning)' },
-  VSC: { bg: 'var(--vsc-bg)', color: 'var(--vsc)' },
-  RED_FLAG: { bg: 'var(--danger-bg)', color: 'var(--danger)' },
-  RAIN_START: { bg: 'var(--info-bg)', color: 'var(--info)' },
+const EVENT_COLORS: Record<string, { bg: string; border: string; color: string }> = {
+  SAFETY_CAR: { bg: 'var(--warning-bg)', border: 'var(--warning-border)', color: 'var(--warning)' },
+  VSC: { bg: 'var(--vsc-bg)', border: 'var(--vsc-border)', color: 'var(--vsc)' },
+  RED_FLAG: { bg: 'var(--danger-bg)', border: 'var(--danger-border)', color: 'var(--danger)' },
 };
 
 const EVENT_LABELS: Record<string, string> = {
   SAFETY_CAR: 'SC',
   VSC: 'VSC',
   RED_FLAG: 'RED',
-  RAIN_START: 'RAIN',
 };
 
 interface EventTimelineProps {
@@ -48,67 +46,56 @@ export function EventTimeline({ events, rainLaps = [], totalLaps }: EventTimelin
   }
   if (ticks[ticks.length - 1] !== totalLaps) ticks.push(totalLaps);
 
+  const pct = (lap: number) => `${(lap / totalLaps) * 100}%`;
+  const widthPct = (start: number, end: number) => `${((end - start + 1) / totalLaps) * 100}%`;
+
   return (
-    <div style={{ position: 'relative', height: '40px', marginTop: '8px' }}>
-      {/* Track bar */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '4px',
-          left: '64px',
-          right: '0',
-          height: '20px',
-          background: 'var(--bg-surface)',
-          borderRadius: '4px',
-        }}
-      />
+    <div>
+      {/* Timeline bar */}
+      <div style={{ position: 'relative', height: '28px', background: 'var(--bg-surface)', borderRadius: '4px' }}>
+        {/* Event blocks */}
+        {displayEvents.map((event) => {
+          const colors = EVENT_COLORS[event.event_type] ?? EVENT_COLORS.SAFETY_CAR;
+          return (
+            <div
+              key={event.event_id}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: pct(event.lap_start - 1),
+                width: widthPct(event.lap_start, event.lap_end),
+                height: '100%',
+                background: colors.bg,
+                border: `0.5px solid ${colors.border}`,
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '10px',
+                fontWeight: 500,
+                color: colors.color,
+                zIndex: 2,
+                minWidth: '20px',
+              }}
+              title={`${EVENT_LABELS[event.event_type]} Laps ${event.lap_start}-${event.lap_end}`}
+            >
+              {EVENT_LABELS[event.event_type]} {event.lap_start}-{event.lap_end}
+            </div>
+          );
+        })}
 
-      {/* Events */}
-      {displayEvents.map((event) => {
-        const colors = EVENT_COLORS[event.event_type] ?? EVENT_COLORS.SAFETY_CAR;
-        const left = (event.lap_start / totalLaps) * 100;
-        const width = ((event.lap_end - event.lap_start + 1) / totalLaps) * 100;
-        return (
-          <div
-            key={event.event_id}
-            style={{
-              position: 'absolute',
-              top: '4px',
-              left: `calc(64px + ${left}% * (100% - 64px) / 100%)`,
-              width: `calc(${width}% * (100% - 64px) / 100%)`,
-              height: '20px',
-              background: colors.bg,
-              borderRadius: '4px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '10px',
-              fontWeight: 500,
-              color: colors.color,
-              zIndex: 1,
-              minWidth: '20px',
-            }}
-            title={`${EVENT_LABELS[event.event_type]} Laps ${event.lap_start}-${event.lap_end}`}
-          >
-            {EVENT_LABELS[event.event_type]}
-          </div>
-        );
-      })}
-
-      {/* Rain ranges */}
-      {rainRanges.map((range, i) => {
-        const left = (range.start / totalLaps) * 100;
-        const width = ((range.end - range.start + 1) / totalLaps) * 100;
-        return (
+        {/* Rain ranges */}
+        {rainRanges.map((range, i) => (
           <div
             key={`rain-${i}`}
             style={{
               position: 'absolute',
-              top: '4px',
-              left: `calc(64px + ${left}% * (100% - 64px) / 100%)`,
-              width: `calc(${width}% * (100% - 64px) / 100%)`,
-              height: '20px',
+              top: 0,
+              left: pct(range.start - 1),
+              width: widthPct(range.start, range.end),
+              height: '100%',
               background: 'var(--info-bg)',
+              border: '0.5px solid var(--info-border)',
               borderRadius: '4px',
               display: 'flex',
               alignItems: 'center',
@@ -116,27 +103,18 @@ export function EventTimeline({ events, rainLaps = [], totalLaps }: EventTimelin
               fontSize: '10px',
               fontWeight: 500,
               color: 'var(--info)',
-              zIndex: 0,
+              zIndex: 1,
               minWidth: '16px',
             }}
             title={`Rain Laps ${range.start}-${range.end}`}
           >
-            RAIN
+            Rain
           </div>
-        );
-      })}
+        ))}
+      </div>
 
       {/* Tick labels */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '28px',
-          left: '64px',
-          right: '0',
-          display: 'flex',
-          justifyContent: 'space-between',
-        }}
-      >
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '4px' }}>
         {ticks.map((t) => (
           <span
             key={t}

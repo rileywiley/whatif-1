@@ -6,6 +6,7 @@ import { RaceTimeline } from './pages/RaceTimeline';
 import { ResultsComparison } from './pages/ResultsComparison';
 import { LapReplay } from './pages/LapReplay';
 import { ShareView } from './pages/ShareView';
+import { Tutorial } from './pages/Tutorial';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -44,6 +45,7 @@ function App() {
             <Route path="/race/:raceId/results" element={<ResultsComparison />} />
             <Route path="/race/:raceId/replay" element={<LapReplay />} />
             <Route path="/scenario/:scenarioId" element={<ShareView />} />
+            <Route path="/tutorial" element={<Tutorial />} />
           </Routes>
         </BrowserRouter>
       </QueryClientProvider>

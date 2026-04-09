@@ -17,17 +17,26 @@ const styles = {
     textDecoration: 'none',
   } as React.CSSProperties,
   logoSuffix: {
-    fontWeight: 200,
-    color: 'var(--text-muted)',
+    fontWeight: 500,
+    color: '#E8002D',
+  } as React.CSSProperties,
+  guideLink: {
+    fontSize: '13px',
+    fontWeight: 300,
+    color: 'var(--text-secondary)',
+    textDecoration: 'none',
   } as React.CSSProperties,
 };
 
 export function NavBar() {
   return (
     <nav style={styles.nav}>
-      <Link to="/" style={styles.logo}>
-        WhatIf<span style={styles.logoSuffix}>-1</span>
-      </Link>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <Link to="/" style={styles.logo}>
+          Whati<span style={styles.logoSuffix}>F-1</span>
+        </Link>
+        <Link to="/tutorial" style={styles.guideLink}>Guide</Link>
+      </div>
     </nav>
   );
 }

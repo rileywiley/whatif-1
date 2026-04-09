@@ -43,12 +43,13 @@ _VSC_END_PATTERNS = [
 ]
 
 _RED_FLAG_PATTERNS = [
-    "RED FLAG",
+    "RED FLAG SHOWN",
+    "SESSION SUSPENDED",
+    "SESSION STOPPED",
 ]
 
 _PENALTY_PATTERNS = [
-    "TIME PENALTY",
-    "PENALTY",
+    "TIME PENALTY FOR CAR",
     "DRIVE THROUGH PENALTY",
     "STOP AND GO",
 ]
@@ -74,38 +75,21 @@ def _extract_penalty_seconds(message: str) -> float | None:
     return None
 
 
-def _message_to_lap(msg_time, laps_df: pd.DataFrame) -> int:
-    """Map a message timestamp to the nearest lap number.
+def _get_lap_number(row, laps_df: pd.DataFrame) -> int:
+    """Get the lap number for a race control message.
 
-    Uses the race elapsed time from the laps DataFrame to find which lap
-    the message occurred on.
+    Uses the 'Lap' column from the RCM DataFrame if available (most
+    reliable), otherwise falls back to timestamp-based mapping.
     """
-    if pd.isna(msg_time):
-        return 1
+    # Prefer the Lap column — FastF1 provides this directly
+    lap_val = row.get("Lap")
+    if pd.notna(lap_val):
+        try:
+            return int(lap_val)
+        except (TypeError, ValueError):
+            pass
 
-    # laps_df['Time'] is the cumulative session time at end of each lap
-    if "Time" not in laps_df.columns or laps_df.empty:
-        return 1
-
-    valid = laps_df.dropna(subset=["Time"])
-    if valid.empty:
-        return 1
-
-    # Convert msg_time to Timedelta if needed
-    if isinstance(msg_time, pd.Timestamp):
-        # FastF1 sometimes gives Timestamps relative to session start
-        # Try to use it as-is
-        pass
-
-    try:
-        # Find laps whose end time is >= message time
-        after = valid[valid["Time"] >= msg_time]
-        if not after.empty:
-            return int(after.iloc[0]["LapNumber"])
-        # Message is after the last lap — assign to final lap
-        return int(valid.iloc[-1]["LapNumber"])
-    except (TypeError, KeyError):
-        return 1
+    return 1
 
 
 def _driver_abbrev_from_number(
@@ -170,10 +154,18 @@ def parse_race_events(session, race_id: str) -> list[RaceEvent]:
 
     for _, row in rcm.iterrows():
         message = str(row.get("Message", ""))
-        msg_time = row.get("Time")
         racing_number = row.get("RacingNumber")
-        lap_num = _message_to_lap(msg_time, laps_df)
+        lap_num = _get_lap_number(row, laps_df)
         driver_abbrev = _driver_abbrev_from_number(racing_number, results)
+
+        # Skip messages that mention SC/VSC but aren't actual deployments
+        msg_upper = message.upper()
+        if any(skip in msg_upper for skip in [
+            "INFRINGEMENT", "INVESTIGATION", "NO FURTHER ACTION",
+            "THROUGH THE PIT LANE", "WILL USE", "LAPPED CAR",
+            "NOTED", "CHEQUERED FLAG", "PENALTY SERVED",
+        ]):
+            continue
 
         # --- Safety Car ---
         if _matches(message, _SC_DEPLOY_PATTERNS):

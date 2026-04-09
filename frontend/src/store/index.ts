@@ -79,16 +79,25 @@ export const useAppStore = create<AppState>((set, get) => ({
     }));
     try {
       const resp = await api.solve(raceId, message);
+      // API returns: { query_parsed, message?, narrative?, sim_result?, scenario_id?, answer? }
+      const content =
+        resp.narrative ??
+        resp.message ??
+        resp.answer?.threshold_value != null
+          ? `Threshold: ${resp.answer.threshold_value}s per lap (${resp.answer.is_feasible ? 'feasible' : 'unlikely'})`
+          : 'Simulation complete.';
       const assistantMsg: ChatMessage = {
         role: 'assistant',
-        content: resp.explanation,
+        content: String(content),
       };
-      set((s) => ({
-        chatMessages: [...s.chatMessages, assistantMsg],
-        simResult: resp.result,
-        scenario: resp.scenario,
+      const updates: Partial<AppState> = {
+        chatMessages: [...get().chatMessages, assistantMsg],
         chatLoading: false,
-      }));
+      };
+      if (resp.sim_result) {
+        updates.simResult = { scenario_id: resp.scenario_id ?? '', ...resp.sim_result } as SimResult;
+      }
+      set(updates as AppState);
     } catch {
       const errorMsg: ChatMessage = {
         role: 'assistant',

@@ -39,6 +39,8 @@ _CIRCUIT_ABBREV: dict[str, str] = {
     "Barcelona": "esp",
     "Circuit Gilles-Villeneuve": "can",
     "Montreal": "can",
+    "Montréal": "can",
+    "Canadian Grand Prix": "can",
     "Red Bull Ring": "aut",
     "Spielberg": "aut",
     "Silverstone Circuit": "gbr",

@@ -36,10 +36,8 @@ export const api = {
     postJson<{ scenario_id: string; result: Record<string, unknown>; computation_time_ms: number }>(`/races/${raceId}/simulate`, scenario),
 
   solve: (raceId: string, query: string) =>
-    postJson<{ scenario: ScenarioInput; result: SimResult; explanation: string }>(
-      `/races/${raceId}/solve`,
-      { query }
-    ),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    postJson<any>(`/races/${raceId}/solve`, { query }),
 
   fetchScenario: (scenarioId: string) =>
     fetchJson<{ race: Race; scenario: ScenarioInput; result: SimResult }>(

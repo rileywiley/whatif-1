@@ -78,6 +78,10 @@ function CollapsibleSection({
   );
 }
 
+const EVENT_TYPES = ['SAFETY_CAR', 'VSC', 'RED_FLAG'];
+const EVENT_LABELS: Record<string, string> = { SAFETY_CAR: 'Safety Car', VSC: 'Virtual Safety Car', RED_FLAG: 'Red Flag' };
+const EVENT_COLORS: Record<string, string> = { SAFETY_CAR: 'var(--warning)', VSC: 'var(--vsc)', RED_FLAG: 'var(--danger)' };
+
 export function AdvancedEditor({ drivers, events, totalLaps: _totalLaps, raceId: _raceId, onSimulate, loading }: AdvancedEditorProps) {
   const scenario = useAppStore((s) => s.scenario) ?? {};
   const updateScenario = useAppStore((s) => s.updateScenario);
@@ -89,9 +93,9 @@ export function AdvancedEditor({ drivers, events, totalLaps: _totalLaps, raceId:
   const driverOverrides = scenario.driver_overrides ?? {};
   const raceParams = scenario.race_param_overrides ?? {};
   const weatherOverrides = scenario.weather_overrides ?? [];
-  const removedEvents = (scenario.event_overrides ?? [])
-    .filter((o) => o.action === 'remove')
-    .map((o) => o.event_id);
+  const eventOverrides = scenario.event_overrides ?? [];
+  const removedEvents = eventOverrides.filter((o) => o.action === 'remove').map((o) => o.event_id);
+  const injectedEvents = eventOverrides.filter((o) => o.action === 'ADD');
 
   function updateDriverOverride(driverId: string, field: 'pace_offset_seconds' | 'tyre_management_pct', value: number) {
     const existing = driverOverrides[driverId] ?? {};
@@ -209,63 +213,100 @@ export function AdvancedEditor({ drivers, events, totalLaps: _totalLaps, raceId:
 
       {/* Event Management */}
       <CollapsibleSection title="Event Management">
-        {events.length === 0 && (
-          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No race events to manage.</div>
+        {/* Existing events */}
+        {events.filter((e) => EVENT_TYPES.includes(e.event_type)).length > 0 && (
+          <div>
+            <div style={{ ...labelStyle, marginBottom: '8px' }}>Existing Events</div>
+            {events
+              .filter((e) => EVENT_TYPES.includes(e.event_type))
+              .map((event) => {
+                const isActive = !removedEvents.includes(event.event_id);
+                return (
+                  <div key={event.event_id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 0', borderBottom: '0.5px solid var(--bg-surface)' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: EVENT_COLORS[event.event_type] }} />
+                        <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>{EVENT_LABELS[event.event_type] ?? event.event_type}</span>
+                      </div>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Laps {event.lap_start}-{event.lap_end}{event.details ? ` | ${event.details}` : ''}</span>
+                    </div>
+                    <div onClick={() => toggleEvent(event.event_id)} style={{ width: '34px', height: '18px', borderRadius: '9px', background: isActive ? 'var(--accent)' : 'var(--border-subtle)', position: 'relative', cursor: 'pointer', transition: 'background 0.15s', flexShrink: 0 }}>
+                      <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: 'var(--text-primary)', position: 'absolute', top: '2px', left: '2px', transition: 'transform 0.15s', transform: isActive ? 'translateX(16px)' : 'translateX(0)' }} />
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
         )}
-        {events
-          .filter((e) => ['SAFETY_CAR', 'VSC', 'RED_FLAG'].includes(e.event_type))
-          .map((event) => {
-            const isActive = !removedEvents.includes(event.event_id);
-            return (
-              <div
-                key={event.event_id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '8px 0',
-                  borderBottom: '0.5px solid var(--bg-surface)',
-                }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-tertiary)' }}>
-                    {event.event_type.replace(/_/g, ' ')}
-                  </span>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                    Laps {event.lap_start} - {event.lap_end}
-                    {event.details ? ` | ${event.details}` : ''}
-                  </span>
+
+        {/* Inject new events */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+            <div style={labelStyle}>Inject Events</div>
+            <button onClick={() => {
+              const current = scenario.event_overrides ?? [];
+              updateScenario({ event_overrides: [...current, { action: 'ADD', event_type: 'SAFETY_CAR', lap_start: 10, lap_end: 14 }] });
+            }} style={{ background: 'transparent', border: '0.5px solid var(--border-subtle)', borderRadius: '6px', padding: '4px 12px', fontSize: '12px', color: 'var(--text-secondary)', cursor: 'pointer', fontFamily: 'var(--font-sans)', fontWeight: 300 }}>
+              + Add Event
+            </button>
+          </div>
+
+          {injectedEvents.length === 0 && (
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>No injected events. Add a safety car, VSC, or red flag to test hypothetical scenarios.</div>
+          )}
+
+          {injectedEvents.map((ev, idx) => (
+            <div key={idx} style={{ background: 'var(--bg-surface)', borderRadius: '6px', padding: '10px 12px', marginBottom: '8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: EVENT_COLORS[ev.event_type ?? 'SAFETY_CAR'] }} />
+                  <span style={{ fontSize: '12px', fontWeight: 500, color: EVENT_COLORS[ev.event_type ?? 'SAFETY_CAR'] }}>Injected Event {idx + 1}</span>
                 </div>
-                <div
-                  onClick={() => toggleEvent(event.event_id)}
-                  style={{
-                    width: '34px',
-                    height: '18px',
-                    borderRadius: '9px',
-                    background: isActive ? 'var(--accent)' : 'var(--border-subtle)',
-                    position: 'relative',
-                    cursor: 'pointer',
-                    transition: 'background 0.15s',
-                    flexShrink: 0,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '14px',
-                      height: '14px',
-                      borderRadius: '50%',
-                      background: 'var(--text-primary)',
-                      position: 'absolute',
-                      top: '2px',
-                      left: '2px',
-                      transition: 'transform 0.15s',
-                      transform: isActive ? 'translateX(16px)' : 'translateX(0)',
-                    }}
-                  />
+                <button onClick={() => {
+                  const current = [...(scenario.event_overrides ?? [])];
+                  let addCount = 0;
+                  for (let i = 0; i < current.length; i++) {
+                    if (current[i].action === 'ADD') { if (addCount === idx) { current.splice(i, 1); break; } addCount++; }
+                  }
+                  updateScenario({ event_overrides: current });
+                }} style={{ background: 'transparent', border: 'none', color: 'var(--danger)', fontSize: '12px', cursor: 'pointer', padding: '2px 6px', fontFamily: 'var(--font-sans)' }}>
+                  Remove
+                </button>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ ...labelStyle, fontSize: '10px' }}>Type</div>
+                  <select style={inputStyle} value={ev.event_type ?? 'SAFETY_CAR'} onChange={(e) => {
+                    const current = [...(scenario.event_overrides ?? [])];
+                    let addCount = 0;
+                    for (let i = 0; i < current.length; i++) { if (current[i].action === 'ADD') { if (addCount === idx) { current[i] = { ...current[i], event_type: e.target.value }; break; } addCount++; } }
+                    updateScenario({ event_overrides: current });
+                  }}>
+                    {EVENT_TYPES.map((t) => <option key={t} value={t}>{EVENT_LABELS[t]}</option>)}
+                  </select>
+                </div>
+                <div style={{ width: '80px' }}>
+                  <div style={{ ...labelStyle, fontSize: '10px' }}>Start Lap</div>
+                  <input type="number" min={1} max={_totalLaps} value={ev.lap_start ?? 10} onChange={(e) => {
+                    const current = [...(scenario.event_overrides ?? [])];
+                    let addCount = 0;
+                    for (let i = 0; i < current.length; i++) { if (current[i].action === 'ADD') { if (addCount === idx) { current[i] = { ...current[i], lap_start: parseInt(e.target.value) || 1 }; break; } addCount++; } }
+                    updateScenario({ event_overrides: current });
+                  }} style={inputStyle} />
+                </div>
+                <div style={{ width: '80px' }}>
+                  <div style={{ ...labelStyle, fontSize: '10px' }}>End Lap</div>
+                  <input type="number" min={1} max={_totalLaps} value={ev.lap_end ?? 14} onChange={(e) => {
+                    const current = [...(scenario.event_overrides ?? [])];
+                    let addCount = 0;
+                    for (let i = 0; i < current.length; i++) { if (current[i].action === 'ADD') { if (addCount === idx) { current[i] = { ...current[i], lap_end: parseInt(e.target.value) || 1 }; break; } addCount++; } }
+                    updateScenario({ event_overrides: current });
+                  }} style={inputStyle} />
                 </div>
               </div>
-            );
-          })}
+            </div>
+          ))}
+        </div>
       </CollapsibleSection>
 
       {/* Weather Overrides */}

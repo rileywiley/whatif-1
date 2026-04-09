@@ -139,4 +139,5 @@ export interface DriverReplayState {
   tyre_age: number;
   actual_position: number;
   pace_relative: number;
+  is_pitting?: boolean;
 }
